@@ -1,6 +1,8 @@
 import pygame
 import os
 import random
+import json
+
 pygame.init()
 
 # Global Constants
@@ -28,6 +30,19 @@ CLOUD = pygame.image.load(os.path.join("Assets/Other", "Cloud.png"))
 
 BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
 
+# Global variable to store the highscore
+HIGH_SCORE_FILE = "highscore.json"
+
+def load_high_score():
+    if os.path.exists(HIGH_SCORE_FILE):
+        with open(HIGH_SCORE_FILE, "r") as file:
+            return json.load(file).get("highscore", 0)
+    else:
+        return 0
+
+def save_high_score(score):
+    with open(HIGH_SCORE_FILE, "w") as file:
+        json.dump({"highscore": score}, file)
 
 class Dinosaur:
     X_POS = 80
@@ -164,7 +179,7 @@ class Bird(Obstacle):
 
 
 def main():
-    global game_speed, x_pos_bg, y_pos_bg, points, obstacles
+    global game_speed, x_pos_bg, y_pos_bg, points, obstacles, high_score
     run = True
     clock = pygame.time.Clock()
     player = Dinosaur()
@@ -178,15 +193,26 @@ def main():
     death_count = 0
 
     def score():
-        global points, game_speed
+        global points, game_speed, high_score
         points += 1
         if points % 100 == 0:
             game_speed += 1
+
+        # Check if we need to update highscore
+        if points > high_score:
+            high_score = points
+            save_high_score(high_score)
 
         text = font.render("Points: " + str(points), True, (0, 0, 0))
         textRect = text.get_rect()
         textRect.center = (1000, 40)
         SCREEN.blit(text, textRect)
+
+        # Display highscore
+        high_score_text = font.render("HighScore: " + str(high_score), True, (0, 0, 0))
+        high_score_rect = high_score_text.get_rect()
+        high_score_rect.center = (1000, 70)
+        SCREEN.blit(high_score_text, high_score_rect)
 
     def background():
         global x_pos_bg, y_pos_bg
@@ -263,5 +289,7 @@ def menu(death_count):
             if event.type == pygame.KEYDOWN:
                 main()
 
+# Load the high score from the JSON file
+high_score = load_high_score()
 
 menu(death_count=0)
